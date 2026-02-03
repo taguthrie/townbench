@@ -17,3 +17,117 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Print Styles for PDF Export */
+@media print {
+  /* Hide navigation, sidebar, and controls */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Force expand all collapsible sections */
+  [data-print-expand] {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Show hidden elements in print mode */
+  .hidden[data-print-expand],
+  tr.hidden[data-print-expand] {
+    display: table-row !important;
+  }
+
+  div.hidden[data-print-expand] {
+    display: block !important;
+  }
+
+  /* Full width layout - remove sidebar spacing */
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 1cm;
+  }
+
+  /* Page break handling */
+  .print-break-before {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .print-break-after {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .print-break-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Ensure tables don't break awkwardly */
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Remove shadows and simplify borders for print */
+  .shadow-sm {
+    box-shadow: none !important;
+  }
+
+  /* Ensure all content is visible */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  .overflow-y-auto {
+    overflow: visible !important;
+  }
+
+  /* Print header styling */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    margin-bottom: 1cm;
+    padding-bottom: 0.5cm;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .print-footer {
+    display: block !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+    padding: 0.5cm;
+    border-top: 1px solid #ccc;
+  }
+
+  /* Hide interactive elements */
+  button:not(.print-visible) {
+    display: none !important;
+  }
+
+  /* Expand percentile bars for print */
+  .print-show-value {
+    display: inline !important;
+  }
+}

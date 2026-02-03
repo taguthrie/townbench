@@ -89,11 +89,11 @@ export default function ComparisonTable({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto">
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-x-auto print-break-before">
       <div className="border-b border-gray-200 px-4 py-3">
         <h3 className="font-semibold text-gray-900">Town Comparison</h3>
       </div>
-      <table className="w-full text-sm">
+      <table className="w-full text-sm print-break-avoid">
         <thead>
           <tr className="border-b border-gray-200 bg-gray-50">
             <th className="px-4 py-2 text-left font-medium text-gray-700">

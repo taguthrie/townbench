@@ -80,15 +80,16 @@ function Section({
   if (entries.length === 0) return null;
 
   return (
-    <div>
+    <div className="print-break-avoid">
       <button
         className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-semibold text-gray-700 hover:bg-gray-50"
         onClick={() => setOpen(!open)}
       >
-        <span className="text-gray-400">{open ? "▼" : "▶"}</span>
+        <span className="text-gray-400 no-print">{open ? "▼" : "▶"}</span>
         {title}
       </button>
-      {open && (
+      {/* Show table when open OR when printing */}
+      <div data-print-expand className={open ? "" : "hidden print:block"}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
@@ -105,7 +106,7 @@ function Section({
             ))}
           </tbody>
         </table>
-      )}
+      </div>
     </div>
   );
 }
@@ -136,7 +137,7 @@ export default function StateRankings({ town }: StateRankingsProps) {
   }, [town.id]);
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm print-break-avoid">
       <button
         className="flex w-full items-center justify-between border-b border-gray-200 px-4 py-3"
         onClick={() => setExpanded(!expanded)}
@@ -144,34 +145,33 @@ export default function StateRankings({ town }: StateRankingsProps) {
         <h3 className="font-semibold text-gray-900">
           State Rankings — {town.state}
         </h3>
-        <span className="text-gray-400">{expanded ? "▼" : "▶"}</span>
+        <span className="text-gray-400 no-print">{expanded ? "▼" : "▶"}</span>
       </button>
 
-      {expanded && (
-        <div>
-          {loading && (
-            <div className="px-4 py-6 text-center text-sm text-gray-500">
-              Loading rankings...
-            </div>
-          )}
-          {!loading && data && (
-            <div className="divide-y divide-gray-100">
-              <Section title="Town Metrics" entries={data.metadataRankings} />
-              <Section title="Budget Overview" entries={data.budgetRankings} />
-              <Section
-                title="Category Breakdown (Per Capita)"
-                entries={data.categoryRankings}
-                defaultOpen={false}
-              />
-            </div>
-          )}
-          {!loading && !data && (
-            <div className="px-4 py-6 text-center text-sm text-gray-500">
-              Unable to load rankings.
-            </div>
-          )}
-        </div>
-      )}
+      {/* Show content when expanded OR when printing */}
+      <div data-print-expand className={expanded ? "" : "hidden print:block"}>
+        {loading && (
+          <div className="px-4 py-6 text-center text-sm text-gray-500 no-print">
+            Loading rankings...
+          </div>
+        )}
+        {!loading && data && (
+          <div className="divide-y divide-gray-100">
+            <Section title="Town Metrics" entries={data.metadataRankings} />
+            <Section title="Budget Overview" entries={data.budgetRankings} />
+            <Section
+              title="Category Breakdown (Per Capita)"
+              entries={data.categoryRankings}
+              defaultOpen={false}
+            />
+          </div>
+        )}
+        {!loading && !data && (
+          <div className="px-4 py-6 text-center text-sm text-gray-500">
+            Unable to load rankings.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

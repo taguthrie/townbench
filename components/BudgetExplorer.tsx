@@ -151,7 +151,7 @@ export default function BudgetExplorer({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm print-break-avoid">
       <div className="border-b border-gray-200 px-4 py-3">
         <h3 className="font-semibold text-gray-900">
           Budget Explorer — {town.name}
@@ -175,14 +175,13 @@ export default function BudgetExplorer({
         </thead>
         <tbody>
           {grouped.map((cat) => (
-            <>
+            <React.Fragment key={cat.category}>
               <tr
-                key={cat.category}
-                className="cursor-pointer border-b border-gray-100 hover:bg-gray-50"
+                className="cursor-pointer border-b border-gray-100 hover:bg-gray-50 print-break-avoid"
                 onClick={() => toggleCategory(cat.category)}
               >
                 <td className="px-4 py-2 font-medium text-gray-900">
-                  <span className="mr-2 text-gray-400">
+                  <span className="mr-2 text-gray-400 no-print">
                     {expandedCategories.has(cat.category) ? "▼" : "▶"}
                   </span>
                   {cat.category}
@@ -193,46 +192,54 @@ export default function BudgetExplorer({
                     formatDifference(cat.total / town.population, stateAvgs[cat.category])}
                 </td>
               </tr>
-              {expandedCategories.has(cat.category) &&
-                cat.subcategories.map((sub) => {
-                  const subKey = `${cat.category}:${sub.subcategory}`;
-                  return (
-                    <>
-                      <tr
-                        key={subKey}
-                        className="cursor-pointer border-b border-gray-50 bg-gray-50 hover:bg-gray-100"
-                        onClick={() => toggleSubcategory(subKey)}
-                      >
-                        <td className="py-2 pl-10 pr-4 font-medium text-gray-700">
-                          <span className="mr-2 text-gray-400">
-                            {expandedSubcategories.has(subKey) ? "▼" : "▶"}
-                          </span>
-                          {sub.subcategory}
-                        </td>
-                        <td className="px-4 py-2 text-right text-gray-700">
-                          {formatMetric(sub.total, metric, town)}
-                          {metric === "per_capita" && town.population > 0 && stateAvgs[`${cat.category}|${sub.subcategory}`] &&
-                            formatDifference(sub.total / town.population, stateAvgs[`${cat.category}|${sub.subcategory}`])}
-                        </td>
-                      </tr>
-                      {expandedSubcategories.has(subKey) &&
-                        sub.items.map((item) => (
-                          <tr
-                            key={item.id}
-                            className="border-b border-gray-50 bg-white"
-                          >
-                            <td className="py-1.5 pl-16 pr-4 text-gray-600">
-                              {item.line_item}
-                            </td>
-                            <td className="px-4 py-1.5 text-right text-gray-600">
-                              {formatMetric(item.amount, metric, town)}
-                            </td>
-                          </tr>
-                        ))}
-                    </>
-                  );
-                })}
-            </>
+              {/* Show subcategories when expanded OR when printing */}
+              <tr data-print-expand className={expandedCategories.has(cat.category) ? "" : "hidden print:table-row"}>
+                <td colSpan={2} className="p-0">
+                  <table className="w-full">
+                    <tbody>
+                      {cat.subcategories.map((sub) => {
+                        const subKey = `${cat.category}:${sub.subcategory}`;
+                        return (
+                          <React.Fragment key={subKey}>
+                            <tr
+                              className="cursor-pointer border-b border-gray-50 bg-gray-50 hover:bg-gray-100 print-break-avoid"
+                              onClick={(e) => { e.stopPropagation(); toggleSubcategory(subKey); }}
+                            >
+                              <td className="py-2 pl-10 pr-4 font-medium text-gray-700">
+                                <span className="mr-2 text-gray-400 no-print">
+                                  {expandedSubcategories.has(subKey) ? "▼" : "▶"}
+                                </span>
+                                {sub.subcategory}
+                              </td>
+                              <td className="px-4 py-2 text-right text-gray-700">
+                                {formatMetric(sub.total, metric, town)}
+                                {metric === "per_capita" && town.population > 0 && stateAvgs[`${cat.category}|${sub.subcategory}`] &&
+                                  formatDifference(sub.total / town.population, stateAvgs[`${cat.category}|${sub.subcategory}`])}
+                              </td>
+                            </tr>
+                            {/* Show line items when expanded OR when printing */}
+                            {sub.items.map((item) => (
+                              <tr
+                                key={item.id}
+                                data-print-expand
+                                className={`border-b border-gray-50 bg-white ${expandedSubcategories.has(subKey) ? "" : "hidden print:table-row"}`}
+                              >
+                                <td className="py-1.5 pl-16 pr-4 text-gray-600">
+                                  {item.line_item}
+                                </td>
+                                <td className="px-4 py-1.5 text-right text-gray-600">
+                                  {formatMetric(item.amount, metric, town)}
+                                </td>
+                              </tr>
+                            ))}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </React.Fragment>
           ))}
         </tbody>
       </table>
