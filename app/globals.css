@@ -20,6 +20,12 @@ body {
 
 /* Print Styles for PDF Export */
 @media print {
+  /* Reset everything for print */
+  * {
+    float: none !important;
+    position: static !important;
+  }
+
   /* Hide navigation, sidebar, and controls */
   .no-print {
     display: none !important;
@@ -42,11 +48,36 @@ body {
     display: block !important;
   }
 
-  /* Full width layout - remove sidebar spacing */
-  body {
+  /* Full width layout */
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  /* Override the flex layout completely */
+  .flex {
+    display: block !important;
+  }
+
+  .h-screen {
+    height: auto !important;
+  }
+
+  .flex-shrink-0 {
+    flex-shrink: 1 !important;
+  }
+
+  /* Main content full width */
+  .print-main-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    overflow: visible !important;
   }
 
   /* Page setup */
@@ -99,13 +130,9 @@ body {
     overflow: visible !important;
   }
 
-  /* Print header styling */
-  .print-header {
+  /* Print title header styling */
+  .print-title {
     display: block !important;
-    text-align: center;
-    margin-bottom: 1cm;
-    padding-bottom: 0.5cm;
-    border-bottom: 1px solid #ccc;
   }
 
   .print-footer {

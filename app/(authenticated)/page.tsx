@@ -92,7 +92,6 @@ export default function Home() {
   };
 
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   // Close export menu when clicking outside
@@ -128,12 +127,7 @@ export default function Home() {
 
   const handlePrint = () => {
     setExportMenuOpen(false);
-    setIsPrinting(true);
-    // Allow React to render PrintableView before printing
-    setTimeout(() => {
-      window.print();
-      setIsPrinting(false);
-    }, 100);
+    window.print();
   };
 
   if (loading) {
@@ -146,15 +140,6 @@ export default function Home() {
 
   return (
     <div className="flex h-screen">
-      {/* Print-only header */}
-      {isPrinting && primaryTown && (
-        <PrintableView
-          town={primaryTown}
-          comparisonTowns={comparisonTowns}
-          metric={metric}
-        />
-      )}
-
       {/* Sidebar */}
       <div className="w-72 flex-shrink-0 no-print">
         <TownSearch
@@ -167,8 +152,17 @@ export default function Home() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-b border-gray-200 bg-white px-6 py-4">
+      <div className="flex-1 overflow-y-auto print-main-content">
+        {/* Print-only title header */}
+        {primaryTown && (
+          <PrintableView
+            town={primaryTown}
+            comparisonTowns={comparisonTowns}
+            metric={metric}
+          />
+        )}
+
+        <div className="border-b border-gray-200 bg-white px-6 py-4 no-print">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">TownBench</h1>
