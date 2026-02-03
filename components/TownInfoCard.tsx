@@ -12,6 +12,14 @@ export default function TownInfoCard({ town, budgetItems }: TownInfoCardProps) {
   const hasBudget = budgetItems.length > 0;
   const budgetYear = hasBudget ? budgetItems[0].fiscal_year : null;
 
+  const educationTotal = budgetItems
+    .filter((item) => item.category === "Education")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const debtTotal = budgetItems
+    .filter((item) => item.category === "Debt Service")
+    .reduce((sum, item) => sum + item.amount, 0);
+
   const yearLabel = (year?: number) => (year ? ` (${year})` : "");
 
   const stats = [
@@ -30,6 +38,20 @@ export default function TownInfoCard({ town, budgetItems }: TownInfoCardProps) {
           : "—",
     },
     { label: "Fiscal Year", value: town.fiscal_year.toString() },
+    {
+      label: "Education/Capita",
+      value:
+        hasBudget && educationTotal > 0 && town.population > 0
+          ? `$${Math.round(educationTotal / town.population).toLocaleString()}`
+          : "—",
+    },
+    {
+      label: "Debt/Capita",
+      value:
+        hasBudget && debtTotal > 0 && town.population > 0
+          ? `$${Math.round(debtTotal / town.population).toLocaleString()}`
+          : "—",
+    },
   ];
 
   return (
@@ -52,7 +74,7 @@ export default function TownInfoCard({ town, budgetItems }: TownInfoCardProps) {
           {hasBudget ? "Budget data" : "Metadata only"}
         </span>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {stats.map((stat) => (
           <div key={stat.label}>
             <div className="text-xs text-gray-500">{stat.label}</div>

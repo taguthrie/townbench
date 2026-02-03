@@ -42,13 +42,13 @@ export async function GET(req: NextRequest) {
 
   // 3. Fetch all budget_line_items for those towns (batched to avoid URL length limits)
   const BATCH_SIZE = 100;
-  const allBudgetItems: { town_id: string; category: string; amount: number }[] = [];
+  const allBudgetItems: { town_id: string; category: string; subcategory: string; amount: number }[] = [];
 
   for (let i = 0; i < townIds.length; i += BATCH_SIZE) {
     const batch = townIds.slice(i, i + BATCH_SIZE);
     const { data, error } = await supabase
       .from("budget_line_items")
-      .select("town_id, category, amount")
+      .select("town_id, category, subcategory, amount")
       .in("town_id", batch)
       .limit(50000);
 
@@ -161,11 +161,46 @@ export async function GET(req: NextRequest) {
 
       categoryRankings.push(
         computeRanking(
-          category,
+          `${category} Per Capita`,
           targetCatBudget / town.population,
           perCapitaValues
         )
       );
+    }
+  }
+
+  // 8. Per-subcategory rankings (per capita)
+  const subcategoryRankings: RankingEntry[] = [];
+
+  // Build subcategory totals per town
+  const townSubcategoryBudgets = new Map<string, Map<string, number>>();
+  for (const item of allBudgetItems) {
+    if (!townSubcategoryBudgets.has(item.town_id)) {
+      townSubcategoryBudgets.set(item.town_id, new Map());
+    }
+    const key = `${item.category}|${item.subcategory}`;
+    const subMap = townSubcategoryBudgets.get(item.town_id)!;
+    subMap.set(key, (subMap.get(key) || 0) + item.amount);
+  }
+
+  if (hasBudget && town.population > 0) {
+    const targetSubMap = townSubcategoryBudgets.get(townId);
+    if (targetSubMap) {
+      for (const [subKey, targetAmount] of targetSubMap) {
+        if (targetAmount === 0) continue;
+
+        const perCapitaValues = townsWithBudget
+          .filter((t) => t.population > 0 && townSubcategoryBudgets.get(t.id)?.has(subKey))
+          .map((t) => townSubcategoryBudgets.get(t.id)!.get(subKey)! / t.population);
+
+        subcategoryRankings.push(
+          computeRanking(
+            subKey,
+            targetAmount / town.population,
+            perCapitaValues
+          )
+        );
+      }
     }
   }
 
@@ -175,5 +210,6 @@ export async function GET(req: NextRequest) {
     metadataRankings,
     budgetRankings,
     categoryRankings,
+    subcategoryRankings,
   });
 }

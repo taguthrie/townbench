@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { BudgetLineItem, MetricType, Town } from "@/types";
 
 interface BudgetExplorerProps {
   town: Town;
   items: BudgetLineItem[];
   metric: MetricType;
+}
+
+interface RankingData {
+  metric: string;
+  stateAvg: number;
 }
 
 interface CategoryGroup {
@@ -40,6 +45,25 @@ function formatMetric(amount: number, metric: MetricType, town: Town): string {
   return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
+function formatDifference(townValue: number, stateAvg: number): React.ReactElement | null {
+  if (!stateAvg || stateAvg === 0) return null;
+  const pct = ((townValue - stateAvg) / stateAvg) * 100;
+
+  let color: string;
+  if (pct <= -15) {
+    color = "text-green-700"; // dark green - 15%+ below average
+  } else if (pct < 0) {
+    color = "text-green-500"; // light green - 0-15% below average
+  } else if (pct <= 10) {
+    color = "text-yellow-600"; // yellow - 0-10% above average
+  } else {
+    color = "text-red-600"; // red - 10%+ above average
+  }
+
+  const sign = pct > 0 ? "+" : "";
+  return <span className={`ml-2 text-xs ${color}`}>{sign}{pct.toFixed(0)}% vs state</span>;
+}
+
 export default function BudgetExplorer({
   town,
   items,
@@ -51,6 +75,29 @@ export default function BudgetExplorer({
   const [expandedSubcategories, setExpandedSubcategories] = useState<
     Set<string>
   >(new Set());
+  const [stateAvgs, setStateAvgs] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (town?.id) {
+      fetch(`/api/rankings?town_id=${town.id}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const avgs: Record<string, number> = {};
+          data.categoryRankings?.forEach((r: RankingData) => {
+            // Remove " Per Capita" suffix to get category name
+            avgs[r.metric.replace(" Per Capita", "")] = r.stateAvg;
+          });
+          data.subcategoryRankings?.forEach((r: RankingData) => {
+            // Key is "category|subcategory"
+            avgs[r.metric] = r.stateAvg;
+          });
+          setStateAvgs(avgs);
+        })
+        .catch(() => {
+          // Silently fail - state avgs are optional
+        });
+    }
+  }, [town?.id]);
 
   const grouped = useMemo(() => {
     const catMap = new Map<string, Map<string, BudgetLineItem[]>>();
@@ -142,6 +189,8 @@ export default function BudgetExplorer({
                 </td>
                 <td className="px-4 py-2 text-right font-medium text-gray-900">
                   {formatMetric(cat.total, metric, town)}
+                  {metric === "per_capita" && town.population > 0 && stateAvgs[cat.category] &&
+                    formatDifference(cat.total / town.population, stateAvgs[cat.category])}
                 </td>
               </tr>
               {expandedCategories.has(cat.category) &&
@@ -162,6 +211,8 @@ export default function BudgetExplorer({
                         </td>
                         <td className="px-4 py-2 text-right text-gray-700">
                           {formatMetric(sub.total, metric, town)}
+                          {metric === "per_capita" && town.population > 0 && stateAvgs[`${cat.category}|${sub.subcategory}`] &&
+                            formatDifference(sub.total / town.population, stateAvgs[`${cat.category}|${sub.subcategory}`])}
                         </td>
                       </tr>
                       {expandedSubcategories.has(subKey) &&

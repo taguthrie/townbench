@@ -13,6 +13,16 @@ interface TownSearchProps {
 
 const PAGE_SIZE = 50;
 
+const SIZE_RANGES = [
+  { label: "All Sizes", value: "", min: 0, max: Infinity },
+  { label: "0-5K", value: "0-5k", min: 0, max: 5000 },
+  { label: "5K-10K", value: "5k-10k", min: 5000, max: 10000 },
+  { label: "10K-15K", value: "10k-15k", min: 10000, max: 15000 },
+  { label: "15K-25K", value: "15k-25k", min: 15000, max: 25000 },
+  { label: "25K-40K", value: "25k-40k", min: 25000, max: 40000 },
+  { label: "40K-100K", value: "40k-100k", min: 40000, max: 100000 },
+];
+
 export default function TownSearch({
   towns,
   primaryTown,
@@ -22,13 +32,45 @@ export default function TownSearch({
 }: TownSearchProps) {
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] = useState<"" | "ME" | "NH">("");
+  const [countyFilter, setCountyFilter] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("");
   const [page, setPage] = useState(1);
+
+  // Extract unique counties grouped by state
+  const countiesByState = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const t of towns) {
+      if (t.county) {
+        if (!map.has(t.state)) map.set(t.state, new Set());
+        map.get(t.state)!.add(t.county);
+      }
+    }
+    const result: { state: string; counties: string[] }[] = [];
+    for (const [state, counties] of map) {
+      result.push({ state, counties: Array.from(counties).sort() });
+    }
+    result.sort((a, b) => a.state.localeCompare(b.state));
+    return result;
+  }, [towns]);
 
   const filtered = useMemo(() => {
     let result = towns;
 
     if (stateFilter) {
       result = result.filter((t) => t.state === stateFilter);
+    }
+
+    if (countyFilter) {
+      result = result.filter((t) => t.county === countyFilter);
+    }
+
+    if (sizeFilter) {
+      const range = SIZE_RANGES.find((r) => r.value === sizeFilter);
+      if (range) {
+        result = result.filter(
+          (t) => t.population >= range.min && t.population < range.max
+        );
+      }
     }
 
     if (search) {
@@ -42,7 +84,7 @@ export default function TownSearch({
     }
 
     return result;
-  }, [towns, search, stateFilter]);
+  }, [towns, search, stateFilter, countyFilter, sizeFilter]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -54,6 +96,15 @@ export default function TownSearch({
   };
   const handleStateFilter = (val: "" | "ME" | "NH") => {
     setStateFilter(val);
+    setCountyFilter(""); // Reset county when state changes
+    setPage(1);
+  };
+  const handleCountyFilter = (val: string) => {
+    setCountyFilter(val);
+    setPage(1);
+  };
+  const handleSizeFilter = (val: string) => {
+    setSizeFilter(val);
     setPage(1);
   };
 
@@ -71,6 +122,37 @@ export default function TownSearch({
           onChange={(e) => handleSearch(e.target.value)}
           className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+        {/* County filter dropdown */}
+        <select
+          value={countyFilter}
+          onChange={(e) => handleCountyFilter(e.target.value)}
+          className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="">All Counties</option>
+          {countiesByState
+            .filter((g) => !stateFilter || g.state === stateFilter)
+            .map((g) => (
+              <optgroup key={g.state} label={g.state}>
+                {g.counties.map((county) => (
+                  <option key={`${g.state}-${county}`} value={county}>
+                    {county}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+        </select>
+        {/* Size filter dropdown */}
+        <select
+          value={sizeFilter}
+          onChange={(e) => handleSizeFilter(e.target.value)}
+          className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          {SIZE_RANGES.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </select>
         <div className="flex gap-1">
           {(["", "ME", "NH"] as const).map((s) => (
             <button
